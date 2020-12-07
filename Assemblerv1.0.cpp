@@ -35,12 +35,10 @@ int main(void)
         }
         else if(command_a[0] == '@')
         {
-            cout<<"\nIts me the A\n";
             instruction_a_handler(command_a);
         }
         else 
         {
-            cout<<"\nIts me the C\n";
             instruction_c_handler(command_a);
         }
     #endif
@@ -84,30 +82,56 @@ string convert_binary(int number) //convert number to binary and return the stri
     return binary;
 }
 
+string handling_comment(string instruction)
+{
+    int idx = 0;
+    string new_instruction = "";
+    int count = instruction.size();
+    bool flag = false;
+    for(char ch:instruction)
+    {
+        if(ch == '/')
+        {
+            flag = true;
+            break;
+        }
+    }
+    if(flag)
+    {
+        while(instruction[idx] != '/')
+        {
+            new_instruction += instruction[idx];
+            idx++;
+         
+        }
+        return new_instruction;
+    }
+    return instruction;
+}
+
 void instruction_a_handler(string instruction) //This function convert instruction A to into machine code and write it to file..
 {
     //Getting the part which has to be converted..
-    cout<<"I am here.";
     string divide = "";
-    string new_instruction;
+    string new_instruction = "";
     int idx, kdx; //Counter Variables..
     string machine_code = "0000000000000000";
     new_instruction = handling_comment(instruction); //Removing Comments if there is any..
     
+    //Getting part to be converted..
     int count = new_instruction.size();
     for(int idx = 1; idx < count; idx++)
     {
         divide += new_instruction[idx];
     }
-
     int number = stringtoint(divide);
     divide = convert_binary(number);
     count = divide.size();
     count -= 1;
+    
     for(idx = count, kdx = 15; idx >=0; idx--, kdx--)
     {
-
-        machine_code[kdx] = divide[idx];
+      machine_code[kdx] = divide[idx];
     }
 
     #if defined(DEBUG)
@@ -117,48 +141,66 @@ void instruction_a_handler(string instruction) //This function convert instructi
 
 }
 
-string handling_comment(string instruction)
-{
-    int idx = 0;
-    string new_instruction = "";
-    while(instruction[idx] != '/')
-    {
-        new_instruction += instruction[idx];
-        idx++; 
-    }
-    return new_instruction;
-}
-/*
 void instruction_c_handler(string instruction)
 {
+    int idx, kdx; // Counter Variables..
     string dest = "000"; //For storing the Destionation it is set to 000 by default which means there is no Destionation...
-    string comp = "0000000";//For storing the the Computation Part of the instruction...
+    string comp = "";//For storing the the Computation Part of the instruction...
     string jmp = "000"; //For storing the Jump Part of the instruction which is set to 000 by default which means there is no Jump...
     string new_instruction = ""; //Will Gonna hold the instruction after removing comments if any... 
-    int flags; //This flag is used to set where the loop find the seprator..
+    int pointer {0}; //This flag is used to set where the loop find the seprator..
     char ch; //Gonna work as temp char..
+    bool flag = false; // For conditions..
 
     //Removing comments if any...
     new_instruction = handling_comment(instruction);
     cout<<new_instruction;
     //Dividing Destionation, computation and Jump..
-    for(int idx = 0; idx < new_instruction.size(); idx++)
+    for(char ch: new_instruction)
+    {
+        if(ch == ';')
+            flag = true;
+    }
+    //Getting the Destionation..
+    for(idx = 0; idx < new_instruction.size(); idx++)
     {
         if(new_instruction[idx] == '=')
         {
-            for(int kdx = idx ; kdx >=0; kdx--)
+            for(kdx = idx ; kdx >=0; kdx--)
             {
                 if(new_instruction[kdx] >= 'A' && new_instruction[kdx] <= 'Z')
                 {
                     dest = new_instruction[kdx];
+                    pointer = idx;
                     break;
                 }
-
             }
             break;
         }
     }
+    //Getting the Computation..
+    idx = pointer;
+    if(flag)
+    {
+        idx ++;
+        while (new_instruction[idx] != ';')
+        {
+            if(new_instruction[idx] != ' ')
+                comp += new_instruction[idx];
+            idx++;
+        }
+    }
+    else
+    {
+        for(; idx < new_instruction.size(); idx++)
+        {
+            if(new_instruction[idx] != ' ')
+                comp += new_instruction[idx];
+        }    
+    }
+    
     #if defined(DEBUG)
-        cout<<"Destionation: "<<dest;
+        cout<<"\nDestionation: "<<dest;
+        cout<<"\nComputation: "<<comp;
     #endif
-}*/
+}
