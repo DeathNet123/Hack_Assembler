@@ -27,7 +27,7 @@ void symbols_comp(string &comp);
 void symbols_jmp(string &jmp);
 string handling_comment(string instruction);
 
-int main(void)
+int main(void)//Main function I know it's Dumb but i am adding it mark it ..
 {
     #if defined(DEBUG)
         string command_a;
