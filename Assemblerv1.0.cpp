@@ -81,12 +81,95 @@ void symbols_dest(string &dest) //This Functions will replace the destination sy
 
 void symbols_comp(string &comp)//This Functions will replace the comp symbol with machine code..
 {
+    #define COMP_A 18
+    #define COMP_M 10
+    vector<pair<string,string>> computation_map_a; //Using Vector to increase flexibilty. This is for computation_map_a..
+    vector<pair<string,string>> computation_map_m; //Using Vector to increase flexibilty. This is for computation_map_m..
+    string computation_a[COMP_A] = {"0", "1", "-1", "D", "A", "!D", "!A", "-D", "-A", "D+1", "A+1", "D-1", "A-1", "D+A", "D-A", "A-D", "D&A", "D|A"};
+    string machine_code_a[COMP_A] = {"101010", "111111", "111010", "001100", "110000", "001101", "110001", "001111", "110011", "011111", "110111", "001110", "110010", "000010", "010011", "000111", "000000", "010101"};
+    string computation_m[COMP_M] = {"M", "!M", "-M", "M+1", "M-1", "D+M", "D-M", "M-D", "D&M", "D|M"};
+    string machine_code_m[COMP_M] = {"110000", "110001", "110011", "110111", "110010", "000010", "010011", "000111", "000000", "010101"};
+    bool flag = false;
+    
+    for(int idx = 0; idx < COMP_A; idx++)
+    {
+        computation_map_a.push_back(make_pair(computation_a[idx], machine_code_a[idx]));
+    }
 
+    for(int idx = 0; idx < COMP_M; idx++)
+    {
+        computation_map_m.push_back(make_pair(computation_m[idx], machine_code_m[idx]));
+    }
+
+    #if defined(DEBUG)
+        cout<<'\n';
+       for(int idx = 0; idx < COMP_A; idx++)
+        {
+            cout<<computation_map_a[idx].first<<' ';
+            cout<<computation_map_a[idx].second<<'\n';
+        }
+        cout<<'\n';
+        for(int idx = 0; idx < COMP_M; idx++)
+        {
+            cout<<computation_map_m[idx].first<<' ';
+            cout<<computation_map_m[idx].second<<'\n';
+        }
+    #endif
+    for(char ch : comp)
+    {
+        if(ch == 'M')
+            flag = true;
+    }
+    if(flag == false)
+        for(int idx = 0; idx < COMP_A; idx++)
+        {
+            if(computation_map_a[idx].first == comp)
+            {
+                comp = computation_map_a[idx].second;
+            }
+        }
+    else
+        for(int idx = 0; idx < COMP_M; idx++)
+        {
+            if(computation_map_m[idx].first == comp)
+            {
+                comp = computation_map_m[idx].second;
+            }
+        }
+    if (flag)
+        comp = "1" + comp;
+    else
+        comp = "0" + comp;
+    
 }
 
 void symbols_jmp(string &jmp)//This Functions will replace the Jump symbol with machine code..
 {
+    #define JMP 7
+    vector<pair<string,string>> jump_map; //Using Vector to increase flexibilty..
+    string jump[JMP] = {"JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP"};//There are 8 different possibilities but we used seven since our fall back value is the 8 possibility..
+    string machine_code[JMP] = {"001", "010", "011", "100", "101", "110", "111"};
+    
+    for(int idx = 0; idx < JMP; idx++)
+    {
+        jump_map.push_back(make_pair(jump[idx], machine_code[idx]));
+    }
 
+    #if defined(DEBUG)
+        cout<<'\n';
+        for(int idx = 0; idx < JMP; idx++)
+        {
+            cout<<jump_map[idx].first<<' ';
+            cout<<jump_map[idx].second<<'\n';
+        }
+    #endif
+    for(int idx = 0; idx < JMP; idx++)
+    {
+        if(jump_map[idx].first == jmp)
+        {
+            jmp = jump_map[idx].second;
+        }
+    }
 }
 
 int chartoint(char ch) // coverts char to int..
@@ -124,7 +207,7 @@ string convert_binary(int number) //convert number to binary and return the stri
     return binary;
 }
 
-string handling_comment(string instruction)
+string handling_comment(string instruction) //This Functions will remove the comments from the instructions..
 {
     int idx = 0;
     string new_instruction = "";
@@ -183,7 +266,7 @@ void instruction_a_handler(string instruction) //This function convert instructi
 
 }
 
-void instruction_c_handler(string instruction)
+void instruction_c_handler(string instruction) //This function will conver the instruction c into machine code and write it down..
 {
     int idx, kdx; // Counter Variables..
     string dest = "000"; //For storing the Destionation it is set to 000 by default which means there is no Destionation...
@@ -205,7 +288,7 @@ void instruction_c_handler(string instruction)
     for(char ch: new_instruction) //Checking if there is JUMP or not..
     {
         if(ch == ';')
-            flag = true;
+            jmp_flag = true;
     }
 
     //Getting the Destionation..
@@ -213,22 +296,22 @@ void instruction_c_handler(string instruction)
     {
         if(new_instruction[idx] == '=') //If there exist = in the instruction then there is Destionation
         {
+            dest = "";
             for(kdx = idx ; kdx >=0; kdx--)
             {
                 if(new_instruction[kdx] >= 'A' && new_instruction[kdx] <= 'Z')
                 {
-                    dest = new_instruction[kdx];
+                    dest = dest +new_instruction[kdx];
                     dest_flag = true;
                     pointer = idx;
-                    break;
                 }
             }
+            reverse(dest.begin(), dest.end());
             break;
         }
     }
 
     //Getting the Computation..
-    
     if(jmp_flag)
     {
         if(dest_flag)
@@ -245,7 +328,7 @@ void instruction_c_handler(string instruction)
     }
     else//if there is no jmp and no semicolon then it will be handled differently..
     {
-        if(dest_flag)
+        if(dest_flag)   
             idx = pointer + 1;
         else
             idx = pointer;
@@ -279,8 +362,12 @@ void instruction_c_handler(string instruction)
     symbols_dest(dest);
     symbols_comp(comp);
     symbols_jmp(jmp);
+    machine_code = "111" + comp + dest + jmp;
     #if defined(DEBUG)
         cout<<"\nMachine Code:";
-        cout<<"Destionation: "<<dest;
+        cout<<"\nDestionation: "<<dest;
+        cout<<"\nComputation :"<<comp;
+        cout<<"\nJump: "<<jmp;
+        cout<<"\nMachine: "<<machine_code;
     #endif
 }
