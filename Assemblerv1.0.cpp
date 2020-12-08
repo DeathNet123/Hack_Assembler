@@ -161,6 +161,7 @@ void instruction_c_handler(string instruction)
         if(ch == ';')
             flag = true;
     }
+
     //Getting the Destionation..
     for(idx = 0; idx < new_instruction.size(); idx++)
     {
@@ -178,6 +179,7 @@ void instruction_c_handler(string instruction)
             break;
         }
     }
+
     //Getting the Computation..
     idx = pointer;
     if(flag)
@@ -189,6 +191,7 @@ void instruction_c_handler(string instruction)
                 comp += new_instruction[idx];
             idx++;
         }
+        pointer = idx;
     }
     else
     {
@@ -199,8 +202,22 @@ void instruction_c_handler(string instruction)
         }    
     }
     
+    //Getting the Jump..
+    if(flag)
+    {
+        jmp = "";
+        idx++;
+        for(; idx < new_instruction.size(); idx++)
+        {
+            if(new_instruction[idx] >='A' && new_instruction[idx] <='Z')
+            jmp += new_instruction[idx];
+        }
+    }
+    
+    //Getting the jmp part..
     #if defined(DEBUG)
         cout<<"\nDestionation: "<<dest;
         cout<<"\nComputation: "<<comp;
+        cout<<"\nJUMP: "<<jmp;
     #endif
 }
