@@ -1,10 +1,15 @@
 /*
-*   string programmer = {"Arslan Iftikhar"};
-*   string file_name = {"Assemblerv1.0.cpp"};
-*   Class Date starting_date(12,7,2020);
+* string programmer = {"Arslan Iftikhar"};
+* string file_name = {"Assemblerv1.0.cpp"};
+* Class Date starting_date(12,7,2020);
 * This is one parse Assembler which means we are going to ignore variables and other symbols in this version..
 * A journalist asked a programmer: What makes code bad?
 * Programmer: No comments.
+* *********************************************USAGE***********************************************************
+* Usage: ./Assemblerv1.0 <filename.asm>
+* output will be machine.o..
+* Usage: ./Assemblerv1.0 <filename.asm> -o filename.o..
+* output will be machine.o..
 */
 #include<iostream>
 #include<string>
@@ -13,26 +18,49 @@
 #include<utility>
 #include<fstream>
 #define INSTRUCTION_SIZE 16
-#define DEBUG
 using namespace std;
 
 //Functions Prototypes..
 int chartoint(char ch); // Converts char to int..
 int stringtoint(string str); // Converts the string to int..
-string convert_binary(int number);
-string instruction_a_handler(string instruction);
-string instruction_c_handler(string instruction);
-void symbols_dest(string &dest);
-void symbols_comp(string &comp);
-void symbols_jmp(string &jmp);
-string handling_comment(string instruction);
-void clean_command(string &instruction);
+string convert_binary(int number);// Converts the int to binary and return string..
+string instruction_a_handler(string instruction);//Converts the A Assembly instruction into machine code and return it back as string..
+string instruction_c_handler(string instruction);//Converts the C Assembly instruction into machine code and return it back as string..
+void symbols_dest(string &dest);// Converts the Destionation part into machine code..
+void symbols_comp(string &comp);//Converts the Computation part into machine code..
+void symbols_jmp(string &jmp);//Converts the Jmp instruction into machine code..
+string handling_comment(string instruction);//It will remove the comment..
+void clean_command(string &instruction);//Clean the command when read from the file later this function will be used to for detecting errors in Assemblerv2.0..
+
 
 int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding it mark it ..
 {
     string command_a = "";
-    #if defined(DEBUG)
-        getline(cin, command_a);
+    string temp, file_in, file_out;
+    string default_out = "machine.o";
+    if(argc == 4)
+    {
+        temp = argv[2];
+        file_in = argv[1];
+        file_out = argv[3];
+        if(file_in == file_out)
+        {
+            cout<<"Error: File in and out cannot be the same.\n";
+            return 0;
+        }
+    }
+    if(argc == 4 && temp == "-o")
+    {
+        default_out = argv[3];
+    }
+    
+    else if(argc == 4 && temp != "-o")
+    {
+        cout<<"Error: Wrong Argument " << argv[2] <<" is unknown\n";
+        return 0;
+    }
+    #if defined(DEBUG_DEEP)
+      getline(cin, command_a);
         cout<<command_a;
         if(command_a[0] == '/')
         {
@@ -47,24 +75,28 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
             instruction_c_handler(command_a);
         }
     #endif
-   ifstream file("test.asm");
-    
-  /*  while(getline(file, command_a))
-    {
+    temp = "";
+    ifstream file(argv[1]);
+    ofstream kfile(default_out);
+    while(getline(file, command_a))
+  {
         clean_command(command_a);
-        if(command_a[0] == '/')
+        if(command_a[0] == '/' || command_a == "")
         {
-            cout << "Done";
+            continue;
         }
         else if(command_a[0] == '@')
         {
-            instruction_a_handler(command_a);
+            temp = instruction_a_handler(command_a);
+            kfile<<temp<<'\n';
         }
         else 
         {
-            instruction_c_handler(command_a);
+            temp = instruction_c_handler(command_a);
+            kfile<<temp<<'\n';
         }
-    }*/
+    }
+    cout<<"\nAssembler has performed its task successfully.\n";
     return 0;
 }
 
@@ -76,7 +108,7 @@ void clean_command(string &instruction)
     int idx = 0;
     for(idx = 0; idx < instruction.size(); idx++)
     {
-        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9'))
+        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9') || instruction[idx] == '+' || instruction[idx] == '-' || instruction[idx] == '/')
         new_command += instruction[idx];
     }
     instruction = new_command;
@@ -94,7 +126,7 @@ void symbols_dest(string &dest) //This Functions will replace the destination sy
         destination_map.push_back(make_pair(destination[idx], machine_code[idx]));
     }
 
-    #if defined(DEBUG)
+    #if defined(DEBUG_DEEP)
         cout<<'\n';
         for(int idx = 0; idx < DEST; idx++)
         {
@@ -133,7 +165,7 @@ void symbols_comp(string &comp)//This Functions will replace the comp symbol wit
         computation_map_m.push_back(make_pair(computation_m[idx], machine_code_m[idx]));
     }
 
-    #if defined(DEBUG)
+    #if defined(DEBUG_DEEP)
         cout<<'\n';
        for(int idx = 0; idx < COMP_A; idx++)
         {
@@ -187,7 +219,7 @@ void symbols_jmp(string &jmp)//This Functions will replace the Jump symbol with 
         jump_map.push_back(make_pair(jump[idx], machine_code[idx]));
     }
 
-    #if defined(DEBUG)
+    #if defined(DEBUG_DEEP)
         cout<<'\n';
         for(int idx = 0; idx < JMP; idx++)
         {
@@ -319,7 +351,7 @@ string instruction_c_handler(string instruction) //This function will convert th
     //Removing comments if any...
     new_instruction = handling_comment(instruction);
     #if defined(DEBUG)
-        cout<<new_instruction;
+        cout<<"\nRemoving: "<<new_instruction;
     #endif
     //Dividing Destionation, computation and Jump..
     for(char ch: new_instruction) //Checking if there is JUMP or not..
