@@ -20,18 +20,20 @@ using namespace std;
 int chartoint(char ch); // Converts char to int..
 int stringtoint(string str); // Converts the string to int..
 string convert_binary(int number);
-void instruction_a_handler(string instruction);
-void instruction_c_handler(string instruction);
+string instruction_a_handler(string instruction);
+string instruction_c_handler(string instruction);
 void symbols_dest(string &dest);
 void symbols_comp(string &comp);
 void symbols_jmp(string &jmp);
 string handling_comment(string instruction);
+void clean_command(string &instruction);
 
-int main(void)//Main function I know it's Dumb but i am adding it mark it ..
+int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding it mark it ..
 {
+    string command_a = "";
     #if defined(DEBUG)
-        string command_a;
         getline(cin, command_a);
+        cout<<command_a;
         if(command_a[0] == '/')
         {
             cout << "Done";
@@ -45,10 +47,40 @@ int main(void)//Main function I know it's Dumb but i am adding it mark it ..
             instruction_c_handler(command_a);
         }
     #endif
+   ifstream file("test.asm");
+    
+  /*  while(getline(file, command_a))
+    {
+        clean_command(command_a);
+        if(command_a[0] == '/')
+        {
+            cout << "Done";
+        }
+        else if(command_a[0] == '@')
+        {
+            instruction_a_handler(command_a);
+        }
+        else 
+        {
+            instruction_c_handler(command_a);
+        }
+    }*/
     return 0;
 }
 
 //Functions Definitions..
+
+void clean_command(string &instruction)
+{
+    string new_command = "";
+    int idx = 0;
+    for(idx = 0; idx < instruction.size(); idx++)
+    {
+        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9'))
+        new_command += instruction[idx];
+    }
+    instruction = new_command;
+}
 
 void symbols_dest(string &dest) //This Functions will replace the destination symbol with machine code..
 {
@@ -195,6 +227,11 @@ string convert_binary(int number) //convert number to binary and return the stri
 {
     int remainder;
     string binary = "";
+    if (number == 0)
+    {
+        binary = "0";
+        return binary;
+    }
     while(number != 1)
     {
         remainder = number % 2;
@@ -234,7 +271,7 @@ string handling_comment(string instruction) //This Functions will remove the com
     return instruction;
 }
 
-void instruction_a_handler(string instruction) //This function convert instruction A to into machine code and write it to file..
+string instruction_a_handler(string instruction) //This function convert instruction A to into machine code and return it back..
 {
     //Getting the part which has to be converted..
     string divide = "";
@@ -262,11 +299,11 @@ void instruction_a_handler(string instruction) //This function convert instructi
     #if defined(DEBUG)
         cout<<"\nMachine code: "<<machine_code<<'\n';
     #endif
-
+    return machine_code;
 
 }
 
-void instruction_c_handler(string instruction) //This function will conver the instruction c into machine code and write it down..
+string instruction_c_handler(string instruction) //This function will convert the instruction c into machine code and return it back..
 {
     int idx, kdx; // Counter Variables..
     string dest = "000"; //For storing the Destionation it is set to 000 by default which means there is no Destionation...
@@ -370,4 +407,5 @@ void instruction_c_handler(string instruction) //This function will conver the i
         cout<<"\nJump: "<<jmp;
         cout<<"\nMachine: "<<machine_code;
     #endif
+    return machine_code;
 }
