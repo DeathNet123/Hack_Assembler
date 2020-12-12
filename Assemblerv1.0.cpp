@@ -38,6 +38,11 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     string command_a = "";
     string temp, file_in, file_out;
     string default_out = "machine.o";
+    if(argc == 1)
+    {
+        cout<<"Error: No input file specified.\n";
+        return 0;
+    }
     if(argc == 4)
     {
         temp = argv[2];
@@ -59,7 +64,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         cout<<"Error: Wrong Argument " << argv[2] <<" is unknown\n";
         return 0;
     }
-    #if defined(DEBUG_DEEP)
+    #if defined(ONE)
       getline(cin, command_a);
         cout<<command_a;
         if(command_a[0] == '/')
@@ -96,7 +101,8 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
             kfile<<temp<<'\n';
         }
     }
-    cout<<"\nAssembler has performed its task successfully.\n";
+    if(argc >= 2)
+        cout<<"\nAssembler has performed its task successfully.\n";
     return 0;
 }
 

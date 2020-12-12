@@ -2,7 +2,7 @@
 * string programmer = {"Arslan Iftikhar"};
 * string file_name = {"Assemblerv2.0.cpp"};
 * Class Date starting_date(12,7,2020);
-* This is one parse Assembler which means we are going to ignore variables and other symbols in this version..
+* This is Two Parse Assembler it can handle simple and variables..
 * A journalist asked a programmer: What makes code bad?
 * Programmer: No comments.
 * *********************************************USAGE***********************************************************
@@ -33,7 +33,7 @@ string handling_comment(string instruction);//It will remove the comment..
 void clean_command(string &instruction);//Clean the command when read from the file later this function will be used to for detecting errors in Assemblerv2.0..
 
 
-int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding it mark it ..
+int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding it to mark it ..
 {
     string command_a = "";
     string temp, file_in, file_out;
