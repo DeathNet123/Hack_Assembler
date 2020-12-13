@@ -14,13 +14,21 @@
 #include<iostream>
 #include<string>
 #include<vector>
+#include<regex> // I knew about this library but i didn't used it but now we are going to speed thing up..
 #include<algorithm> // Used for reversing string..
 #include<utility>
 #include<fstream>
 #define INSTRUCTION_SIZE 16
+#define PRINT_SYMBOL
 using namespace std;
 
-//Functions Prototypes..
+//Global variables..
+vector<pair<string,string>> symbols_map; //THis map is Global because it is going to be used by multiple functions..
+unsigned int lines = 0; // This is going to count the total..
+unsigned int pointers = -1;//THis is the pointer which will tell us which line is being executed..
+
+                                                                    //Functions Prototypes..
+/**********************************************************************************************************************************************************************/
 int chartoint(char ch); // Converts char to int..
 int stringtoint(string str); // Converts the string to int..
 string convert_binary(int number);// Converts the int to binary and return string..
@@ -31,13 +39,19 @@ void symbols_comp(string &comp);//Converts the Computation part into machine cod
 void symbols_jmp(string &jmp);//Converts the Jmp instruction into machine code..
 string handling_comment(string instruction);//It will remove the comment..
 void clean_command(string &instruction);//Clean the command when read from the file later this function will be used to for detecting errors in Assemblerv2.0..
+void symbol_adder(string &get_cake, unsigned int& pointer);//will Add sybmols to add symbol table..
+void handle_brace(string &commad_a);
 
-
+                                                                    //Main function
+/*****************************************************************************************************************************************************************/
 int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding it to mark it ..
-{
+{        
     string command_a = "";
     string temp, file_in, file_out;
     string default_out = "machine.o";
+    int variables_pointer = 16;
+    int sizer {0};
+    symbol_adder(command_a, pointers);
     if(argc == 4)
     {
         temp = argv[2];
@@ -62,6 +76,8 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     #if defined(DEBUG_DEEP)
       getline(cin, command_a);
         cout<<command_a;
+        sizer = command_a.size();
+        if(command_a[0] == '(' && command_a[sizer-1] == ')')
         if(command_a[0] == '/')
         {
             cout << "Done";
@@ -78,10 +94,11 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     temp = "";
     ifstream file(argv[1]);
     ofstream kfile(default_out);
+   //Second Parse or maybe third..
     while(getline(file, command_a))
   {
         clean_command(command_a);
-        if(command_a[0] == '/' || command_a == "")
+        if(command_a[0] == '/' || command_a == "")//Making test again..
         {
             continue;
         }
@@ -100,9 +117,38 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     return 0;
 }
 
-//Functions Definitions..
+                                                                        //Functions Definitions..
+/***********************************************************************************************************************************************************************/
 
-void clean_command(string &instruction)
+void handle_brace(string &commad_a)
+{
+    string new_command = "";
+    for(int idx = 0; idx < commad_a.size(); idx++)
+    {   if(commad_a[idx] != '(' || commad_a[idx] == ')')
+        new_command += commad_a[idx];
+    }
+}
+void symbol_adder(string& get_cake, unsigned int& pointer)//This function will add symbol to the symbol table..
+{
+    #define DEF_SYMBOL_LENGTH 23
+    string default_value[DEF_SYMBOL_LENGTH] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16384", "24576", "0", "1", "2", "3", "4"};
+    string default_symbol[DEF_SYMBOL_LENGTH] = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "SCREEN", "KBD", "SP", "LCL", "ARG", "THIS", "THAT"};
+    if(get_cake == "" && pointer == -1)
+    {
+        for(int idx = 0; idx < DEF_SYMBOL_LENGTH; idx++)
+        {
+            symbols_map.push_back(make_pair(default_symbol[idx], default_value[idx]));
+        }
+        #if defined(PRINT_SYMBOL)
+            for(int idx = 0; idx < symbols_map.size(); idx++)
+            {
+                cout<<symbols_map[idx].first<<' ';
+                cout<<symbols_map[idx].second<<'\n';
+            }
+        #endif
+    }
+}
+void clean_command(string &instruction)//This function is going to be used to remove the extra spaces when instructions are read from the file..
 {
     string new_command = "";
     int idx = 0;
