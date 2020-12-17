@@ -1,15 +1,15 @@
 /*
 * string programmer = {"Arslan Iftikhar"};
 * string file_name = {"Assemblerv2.0.cpp"};
-* Class Date starting_date(12,13,2020);
-* This is Two Parse Assembler it can handle symbol and variables..
+* Class Date starting_date(12,17,2020);
+* This is Two Parse Assembler it can handle symbol and variables and will handle errors..
 * A journalist asked a programmer: What makes code bad?
 * Programmer: No comments.
 * *********************************************USAGE***********************************************************
-* Usage: ./Assemblerv2.0 <filename.asm>
-* output will be machine.o..
-* Usage: ./Assemblerv2.0 <filename.asm> -o filename.o..
-* output will be machine.o..
+* Usage: ./Assemblerv2.1 <filename.asm>
+* output will be machine.hack..
+* Usage: ./Assemblerv2.1 <filename.asm> -o filename.hack ..
+* output will be filename.hack..
 */
 #include<iostream>
 #include<string>
@@ -18,14 +18,17 @@
 #include<algorithm> // Used for reversing string..
 #include<utility>
 #include<fstream>
-#define PRINT_SYMBOL
 #define INSTRUCTION_SIZE 16
 using namespace std;
 
 //Global variables..
 vector<pair<string,string>> symbols_map; //THis map is Global because it is going to be used by multiple functions..
+vector<int> line_declared;
 bool error_flag = false;
- int lines {0}; // This is going to count the total..
+int number_errors = 0;
+int label_count = 0;
+string command = "";
+int lines {0}; // This is going to count the total..
 
                                                                     //Functions Prototypes..
 /**********************************************************************************************************************************************************************/
@@ -44,7 +47,7 @@ void handle_variable(string handle_variable, int pointers, int &variables_pointe
 bool look_in_symbols(string command_a);
 void handle_refrence(string &command_a, int pointers);
 void parse_a(string &command_a);
-
+bool check_syntax_refrence(string &command_a, int k); //Where K is Unknow Character..
 
                                                                     //Main function
 /*****************************************************************************************************************************************************************/
@@ -86,6 +89,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         pointers++;
         lines++;
         clean_command(command_a);
+        command= command_a;
         if(command_a[0] == '/' || command_a == "")//Making test again..
         {
             pointers--;
@@ -93,8 +97,12 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         }
         if(command_a[0] == '(' && command_a[command_a.size()-1] == ')')
         {
-            pointers--;
-            handle_refrence(command_a, pointers);
+            if(!(check_syntax_refrence(command_a, 1)))
+            {
+                pointers--;
+                label_count++;
+                handle_refrence(command_a, pointers);
+            }
         }
     }
 
@@ -102,6 +110,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     file.clear();
     file.seekg(0, ios::beg);
     pointers = 0;
+    lines = 0;
     while(getline(file, command_a))
     {
         pointers++;
@@ -114,17 +123,15 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         }
         if(command_a[0] == '@' && ((command_a[1] >= 'A' && command_a[1] <= 'Z') || command_a[1] == '_' || (command_a[1] >= 'a' && command_a[1] <= 'z')))
         {
+            if(!(check_syntax_refrence(command_a, 0)))
             handle_variable(command_a, pointers, variables_pointer);  
         }
     }
-    if(error_flag)
-    {
-       cout<<"ERROR: Assembler failed to complete the Task\n";
-       return 0;
-    }
+    
     //Third Parse..
     file.clear();
     file.seekg(0, ios::beg);
+    pointers = 0;
     ofstream tfile("TEMP.asm");
     {
         while(getline(file, command_a))
@@ -144,9 +151,11 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
    tfile.close();
    file.close();
    ofstream kfile(default_out);
+   lines = 0;
    file.open("TEMP.asm");
     while(getline(file, command_a))
   {
+        lines++;
         clean_command(command_a);
         if(command_a[0] == '/' || command_a == "")//Making test again..
         {
@@ -154,36 +163,82 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         }
         else if(command_a[0] == '@')
         {
+            if(error_flag)
+                continue;
             temp = instruction_a_handler(command_a);
             kfile<<temp<<'\n';
         }
-        else 
+        else
         {
             temp = instruction_c_handler(command_a);
             kfile<<temp<<'\n';
         }
     }
+   
+    if(error_flag)
+    {
+       cout<<"ERROR: Assembler failed to complete the Task\n";
+       cout<<"********************STATUS*********************\n";
+       cout<<"ERROR :"<<number_errors<<'\n';
+       cout<<"LINES: "<<lines<<'\n';
+       return 0;
+    }
+    cout<<"\nAssembler has performed its task successfully.\n";
+    cout<<"********************STATUS*********************\n";
+    cout<<"ERROR :"<<number_errors<<'\n';
+    cout<<"LINES: "<<lines + label_count<<'\n';
     file.close();
     kfile.close();
     tfile.close();
-    cout<<"\nAssembler has performed its task successfully.\n";
+    remove("TEMP.asm");
     return 0;
 }
 
                                                                         //Functions Definitions..
 /***********************************************************************************************************************************************************************/
-
+bool check_syntax_refrence(string &command_a, int k)
+{
+    if(k)
+        if(command_a[k] >= '0' && command_a[k] <= '9')
+        {
+            cout<<"SYNTAX ERROR: The Label Name Cannot Start from the Integer at line "<<lines<<'\n';
+            cout<<"\t\t"<<command_a<<'\n';
+            error_flag = true;
+            number_errors++;
+        }
+    else if(command_a[1] >= '0' && command_a[1] <= '9')
+    {
+        cout<<"SYNTAX ERROR: The Label Name Cannot Start from the Integer at line "<<lines<<'\n';
+        cout<<"\t\t"<<command_a<<'\n';
+        error_flag = true;
+        number_errors++;
+    }
+    for(int idx = 1; idx < command_a.size() - k; idx++)
+    {
+        if(!((command_a[idx] >= 'A' && command_a[idx] <= 'Z') || (command_a[idx] >= 'a' && command_a[idx] <= 'z') || command_a[idx] == '$' || command_a[idx] == ':' || command_a[idx] == '_' || command_a[idx] == '.' ||(command_a[idx] >= '0' && command_a[idx] <='9')))
+        {
+            cout<<"SYNTAX ERROR: Illegal Character "<<command_a[idx]<<" in "<<command_a<<" at line "<<lines<<'\n';
+            cout<<"\t\t"<<command_a<<'\n';
+            number_errors++;
+            error_flag = true;
+            return true;
+        }
+    }
+    return false;
+}
 void handle_refrence(string & command_a, int pointers)
 {
     bool flag = false;
     flag = look_in_symbols(command_a);
     if(!flag)
         symbol_adder(command_a, pointers + 1);
-    else
+    else 
     {
         error_flag = true;
         cout<<"ERROR: Redefinition of LABEL at line "<<lines<<'\n';
         cout<<"The LABEL "<<command_a<<" is already declared\n";
+        cout<<"\t\t"<<command_a<<'\n';
+        number_errors++;
     } 
 }
 
@@ -274,6 +329,7 @@ void clean_command(string &instruction)//This function is going to be used to re
 void symbols_dest(string &dest) //This Functions will replace the destination symbol with machine code..
 {
     #define DEST 7
+    bool flag = false;
     vector<pair<string,string>> destination_map; //Using Vector to increase flexibilty..
     string destination[DEST] = {"M", "D", "MD", "A", "AM", "AD", "AMD"};//There are 8 different possibilities but we used seven since our fall back value is the 8 possibility..
     string machine_code[DEST] = {"001", "010", "011", "100", "101", "110", "111"};
@@ -296,7 +352,16 @@ void symbols_dest(string &dest) //This Functions will replace the destination sy
         if(destination_map[idx].first == dest)
         {
             dest = destination_map[idx].second;
+            flag = true;
         }
+    }
+
+    if(!flag)
+    {
+        cout<<"SYNTAX ERROR: Invalid Destination "<<dest<<" at line "<<lines<<'\n';
+        cout<<"\t\t"<<command<<'\n';
+        number_errors++;
+        error_flag = true;
     }
 }
 
@@ -304,6 +369,7 @@ void symbols_comp(string &comp)//This Functions will replace the comp symbol wit
 {
     #define COMP_A 18
     #define COMP_M 10
+    bool flage = false;
     vector<pair<string,string>> computation_map_a; //Using Vector to increase flexibilty. This is for computation_map_a..
     vector<pair<string,string>> computation_map_m; //Using Vector to increase flexibilty. This is for computation_map_m..
     string computation_a[COMP_A] = {"0", "1", "-1", "D", "A", "!D", "!A", "-D", "-A", "D+1", "A+1", "D-1", "A-1", "D+A", "D-A", "A-D", "D&A", "D|A"};
@@ -347,6 +413,7 @@ void symbols_comp(string &comp)//This Functions will replace the comp symbol wit
             if(computation_map_a[idx].first == comp)
             {
                 comp = computation_map_a[idx].second;
+                flage = true;
             }
         }
     else
@@ -355,13 +422,22 @@ void symbols_comp(string &comp)//This Functions will replace the comp symbol wit
             if(computation_map_m[idx].first == comp)
             {
                 comp = computation_map_m[idx].second;
+                flage = true;
             }
         }
-    if (flag)
+
+    if(!flage)
+    {
+        cout<<"SYNTAX ERROR: Invalid Computation "<<comp<<" at line "<<lines<<'\n';
+        cout<<"\t\t"<<command<<'\n';
+        number_errors++;
+        error_flag = true;
+    }
+    
+     if (flag)
         comp = "1" + comp;
     else
         comp = "0" + comp;
-    
 }
 
 void symbols_jmp(string &jmp)//This Functions will replace the Jump symbol with machine code..
@@ -370,7 +446,7 @@ void symbols_jmp(string &jmp)//This Functions will replace the Jump symbol with 
     vector<pair<string,string>> jump_map; //Using Vector to increase flexibilty..
     string jump[JMP] = {"JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP"};//There are 8 different possibilities but we used seven since our fall back value is the 8 possibility..
     string machine_code[JMP] = {"001", "010", "011", "100", "101", "110", "111"};
-    
+    bool flag = false;
     for(int idx = 0; idx < JMP; idx++)
     {
         jump_map.push_back(make_pair(jump[idx], machine_code[idx]));
@@ -389,7 +465,16 @@ void symbols_jmp(string &jmp)//This Functions will replace the Jump symbol with 
         if(jump_map[idx].first == jmp)
         {
             jmp = jump_map[idx].second;
+            flag = true;
         }
+    }
+
+    if(!flag)
+    {
+        cout<<"SYNTAX ERROR: Invalid JUMP operation "<<jmp<<" at line "<<lines<<'\n';
+        cout<<"\t\t"<<command<<'\n';
+        number_errors++;
+        error_flag = true;
     }
 }
 
@@ -468,7 +553,6 @@ string instruction_a_handler(string instruction) //This function convert instruc
     int idx, kdx; //Counter Variables..
     string machine_code = "0000000000000000";
     new_instruction = handling_comment(instruction); //Removing Comments if there is any..
-    
     //Getting part to be converted..
     int count = new_instruction.size();
     for(int idx = 1; idx < count; idx++) //Loop started from the 1 because it will skip @..
@@ -585,8 +669,11 @@ string instruction_c_handler(string instruction) //This function will convert th
         cout<<"\nComputation: "<<comp;
         cout<<"\nJUMP: "<<jmp;
     #endif
+    if(dest != "000")
     symbols_dest(dest);
+    if(comp != "0000000")
     symbols_comp(comp);
+    if(jmp != "000")
     symbols_jmp(jmp);
     machine_code = "111" + comp + dest + jmp;
     #if defined(DEBUG)

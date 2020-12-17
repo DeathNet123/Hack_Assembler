@@ -37,7 +37,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
 {
     string command_a = "";
     string temp, file_in, file_out;
-    string default_out = "machine.o";
+    string default_out = "machine.hack";
     if(argc == 1)
     {
         cout<<"Error: No input file specified.\n";

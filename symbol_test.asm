@@ -1,11 +1,11 @@
 @256
 D=A
-@SP
+@S@P
 M=D
 @133
 0;JMP
 @R15
-M=D
+M=K
 @SP
 AM=M-1
 D=M
@@ -13,7 +13,7 @@ A=A-1
 D=M-D
 M=0
 @END_EQ
-D;JNE
+D;JNP
 @SP
 A=M-1
 M=-1
