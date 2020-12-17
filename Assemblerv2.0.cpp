@@ -18,8 +18,8 @@
 #include<algorithm> // Used for reversing string..
 #include<utility>
 #include<fstream>
-#define INSTRUCTION_SIZE 16
 #define PRINT_SYMBOL
+#define INSTRUCTION_SIZE 16
 using namespace std;
 
 //Global variables..
@@ -52,9 +52,9 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
 {        
     string command_a = "";
     string temp, file_in, file_out;
-    string default_out = "machine.o";
+    string default_out = "machine.hack";
     int variables_pointer = 16;
-    int pointers = 0;//THis is the pointer which will tell us which line is being executed..
+    int pointers = -1;//THis is the pointer which will tell us which line is being executed..
     symbol_adder(command_a, pointers);
     if(argc == 4)
     {
@@ -77,6 +77,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         cout<<"Error: Wrong Argument " << argv[2] <<" is unknown\n";
         return 0;
     }
+    
     temp = "";
     ifstream file(argv[1]);
     //First Parse..
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         }
         if(command_a[0] == '(' && command_a[command_a.size()-1] == ')')
         {
+            pointers--;
             handle_refrence(command_a, pointers);
         }
     }
@@ -110,7 +112,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
             pointers--;
             continue;
         }
-        if(command_a[0] == '@' && (command_a[1] >= 'A' && command_a[1] <= 'Z') || command_a[1] == '_')
+        if(command_a[0] == '@' && ((command_a[1] >= 'A' && command_a[1] <= 'Z') || command_a[1] == '_' || (command_a[1] >= 'a' && command_a[1] <= 'z')))
         {
             handle_variable(command_a, pointers, variables_pointer);  
         }
@@ -163,6 +165,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     }
     file.close();
     kfile.close();
+    tfile.close();
     cout<<"\nAssembler has performed its task successfully.\n";
     return 0;
 }
@@ -236,7 +239,7 @@ void symbol_adder(string get_cake, int pointer)//This function will add symbol t
     #define DEF_SYMBOL_LENGTH 23
     string default_value[DEF_SYMBOL_LENGTH] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16384", "24576", "0", "1", "2", "3", "4"};
     string default_symbol[DEF_SYMBOL_LENGTH] = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "SCREEN", "KBD", "SP", "LCL", "ARG", "THIS", "THAT"};
-    if(get_cake == "" && pointer == 0)
+    if(get_cake == "" && pointer == -1)
     {
         for(int idx = 0; idx < DEF_SYMBOL_LENGTH; idx++)
         {
@@ -262,7 +265,7 @@ void clean_command(string &instruction)//This function is going to be used to re
     int idx = 0;
     for(idx = 0; idx < instruction.size(); idx++)
     {
-        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9') || instruction[idx] == '+' || instruction[idx] == '-' || instruction[idx] == '/' || instruction[idx] == '(' || instruction[idx] == ')')
+        if((instruction[idx] >= '!' && instruction[idx] <= 'Z') || (instruction[idx] >= 'a' && instruction[idx] <= 'z') || instruction[idx] == '_' || instruction[idx] == '|')
         new_command += instruction[idx];
     }
     instruction = new_command;

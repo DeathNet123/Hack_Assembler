@@ -1,13 +1,21 @@
-//CAKE
-
-//ERROR is the worse
-@123
-@LOOP
-(LOOP)
-@CAKE
-@10
-M = D + A
-(FAKE)
-M + A
-0; JMP
-@NIGHT
+@256
+D=A
+@SP
+M=D
+@133
+0;JMP
+@R15
+M=D
+@SP
+AM=M-1
+D=M
+A=A-1
+D=M-D
+M=0
+@END_EQ
+D;JNE
+@SP
+A=M-1
+M=-1
+(END_EQ)
+@R15
