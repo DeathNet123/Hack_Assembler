@@ -64,22 +64,6 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         cout<<"Error: Wrong Argument " << argv[2] <<" is unknown\n";
         return 0;
     }
-    #if defined(ONE)
-      getline(cin, command_a);
-        cout<<command_a;
-        if(command_a[0] == '/')
-        {
-            cout << "Done";
-        }
-        else if(command_a[0] == '@')
-        {
-            instruction_a_handler(command_a);
-        }
-        else 
-        {
-            instruction_c_handler(command_a);
-        }
-    #endif
     temp = "";
     ifstream file(argv[1]);
     ofstream kfile(default_out);
@@ -103,6 +87,8 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     }
     if(argc >= 2)
         cout<<"\nAssembler has performed its task successfully.\n";
+        kfile.close();
+        file.close();
     return 0;
 }
 

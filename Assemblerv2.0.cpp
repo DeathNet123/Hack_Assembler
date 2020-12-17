@@ -24,8 +24,8 @@ using namespace std;
 
 //Global variables..
 vector<pair<string,string>> symbols_map; //THis map is Global because it is going to be used by multiple functions..
-unsigned int lines = 0; // This is going to count the total..
-unsigned int pointers = -1;//THis is the pointer which will tell us which line is being executed..
+bool error_flag = false;
+ int lines {0}; // This is going to count the total..
 
                                                                     //Functions Prototypes..
 /**********************************************************************************************************************************************************************/
@@ -39,8 +39,12 @@ void symbols_comp(string &comp);//Converts the Computation part into machine cod
 void symbols_jmp(string &jmp);//Converts the Jmp instruction into machine code..
 string handling_comment(string instruction);//It will remove the comment..
 void clean_command(string &instruction);//Clean the command when read from the file later this function will be used to for detecting errors in Assemblerv2.0..
-void symbol_adder(string &get_cake, unsigned int& pointer);//will Add sybmols to add symbol table..
-void handle_brace(string &commad_a);
+void symbol_adder(string get_cake, int pointer);//will Add sybmols to add symbol table..
+void handle_variable(string handle_variable, int pointers, int &variables_pointer);
+bool look_in_symbols(string command_a);
+void handle_refrence(string &command_a, int pointers);
+void parse_a(string &command_a);
+
 
                                                                     //Main function
 /*****************************************************************************************************************************************************************/
@@ -50,7 +54,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     string temp, file_in, file_out;
     string default_out = "machine.o";
     int variables_pointer = 16;
-    int sizer {0};
+    int pointers = 0;//THis is the pointer which will tell us which line is being executed..
     symbol_adder(command_a, pointers);
     if(argc == 4)
     {
@@ -73,28 +77,72 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         cout<<"Error: Wrong Argument " << argv[2] <<" is unknown\n";
         return 0;
     }
-    #if defined(DEBUG_DEEP)
-      getline(cin, command_a);
-        cout<<command_a;
-        sizer = command_a.size();
-        if(command_a[0] == '(' && command_a[sizer-1] == ')')
-        if(command_a[0] == '/')
-        {
-            cout << "Done";
-        }
-        else if(command_a[0] == '@')
-        {
-            instruction_a_handler(command_a);
-        }
-        else 
-        {
-            instruction_c_handler(command_a);
-        }
-    #endif
     temp = "";
     ifstream file(argv[1]);
-    ofstream kfile(default_out);
-   //Second Parse or maybe third..
+    //First Parse..
+    while (getline(file, command_a))
+    {
+        pointers++;
+        lines++;
+        clean_command(command_a);
+        if(command_a[0] == '/' || command_a == "")//Making test again..
+        {
+            pointers--;
+            continue;
+        }
+        if(command_a[0] == '(' && command_a[command_a.size()-1] == ')')
+        {
+            handle_refrence(command_a, pointers);
+        }
+    }
+
+    //Second Parse..
+    file.clear();
+    file.seekg(0, ios::beg);
+    pointers = 0;
+    while(getline(file, command_a))
+    {
+        pointers++;
+        lines++;
+        clean_command(command_a);
+        if(command_a[0] == '/' || command_a == "")//Making test again..
+        {
+            pointers--;
+            continue;
+        }
+        if(command_a[0] == '@' && (command_a[1] >= 'A' && command_a[1] <= 'Z') || command_a[1] == '_')
+        {
+            handle_variable(command_a, pointers, variables_pointer);  
+        }
+    }
+    if(error_flag)
+    {
+       cout<<"ERROR: Assembler failed to complete the Task\n";
+       return 0;
+    }
+    //Third Parse..
+    file.clear();
+    file.seekg(0, ios::beg);
+    ofstream tfile("TEMP.asm");
+    {
+        while(getline(file, command_a))
+        {
+            clean_command(command_a);
+            if(command_a[0] == '/' || command_a == "")
+                continue;
+            else if(command_a[0] == '(')
+                continue;
+            else if(command_a[0] == '@')
+            {  
+                parse_a(command_a);
+            }
+            tfile << command_a<<'\n';
+        }
+    }
+   tfile.close();
+   file.close();
+   ofstream kfile(default_out);
+   file.open("TEMP.asm");
     while(getline(file, command_a))
   {
         clean_command(command_a);
@@ -113,6 +161,8 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
             kfile<<temp<<'\n';
         }
     }
+    file.close();
+    kfile.close();
     cout<<"\nAssembler has performed its task successfully.\n";
     return 0;
 }
@@ -120,41 +170,99 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
                                                                         //Functions Definitions..
 /***********************************************************************************************************************************************************************/
 
-void handle_brace(string &commad_a)
+void handle_refrence(string & command_a, int pointers)
+{
+    bool flag = false;
+    flag = look_in_symbols(command_a);
+    if(!flag)
+        symbol_adder(command_a, pointers + 1);
+    else
+    {
+        error_flag = true;
+        cout<<"ERROR: Redefinition of LABEL at line "<<lines<<'\n';
+        cout<<"The LABEL "<<command_a<<" is already declared\n";
+    } 
+}
+
+void parse_a(string &command_a)
 {
     string new_command = "";
-    for(int idx = 0; idx < commad_a.size(); idx++)
-    {   if(commad_a[idx] != '(' || commad_a[idx] == ')')
-        new_command += commad_a[idx];
+    for(int idx = 1; idx < command_a.size(); idx++)
+    {
+        new_command += command_a[idx];
+    }
+
+    for(int idx = 0; idx < symbols_map.size(); idx++)
+    {
+        if(symbols_map[idx].first == new_command || symbols_map[idx].first == '(' + new_command + ')')
+        {
+            command_a = '@'+ symbols_map[idx].second;
+        }
     }
 }
-void symbol_adder(string& get_cake, unsigned int& pointer)//This function will add symbol to the symbol table..
+
+bool look_in_symbols(string command_a)
+{
+    for(int idx = 0; idx < symbols_map.size(); idx++)
+    {
+        if(symbols_map[idx].first == command_a)
+            return true;
+    }
+    return false;
+}
+
+void handle_variable(string handle_variable, int pointers, int &variables_pointer)
+{
+    string new_command = "";
+    bool flag_refrence = false;
+    bool flag_variable = false;
+    for (int idx = 1; idx < handle_variable.size(); idx++)
+    {
+        new_command += handle_variable[idx];
+    }
+    handle_variable = new_command;
+    new_command = '(' + new_command + ')';
+    flag_refrence = look_in_symbols(new_command);
+    flag_variable = look_in_symbols(handle_variable);
+
+    if(!flag_variable && !flag_refrence)
+    {
+        symbol_adder(handle_variable, variables_pointer++);
+    }
+}
+
+void symbol_adder(string get_cake, int pointer)//This function will add symbol to the symbol table..
 {
     #define DEF_SYMBOL_LENGTH 23
     string default_value[DEF_SYMBOL_LENGTH] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16384", "24576", "0", "1", "2", "3", "4"};
     string default_symbol[DEF_SYMBOL_LENGTH] = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "SCREEN", "KBD", "SP", "LCL", "ARG", "THIS", "THAT"};
-    if(get_cake == "" && pointer == -1)
+    if(get_cake == "" && pointer == 0)
     {
         for(int idx = 0; idx < DEF_SYMBOL_LENGTH; idx++)
         {
             symbols_map.push_back(make_pair(default_symbol[idx], default_value[idx]));
         }
-        #if defined(PRINT_SYMBOL)
-            for(int idx = 0; idx < symbols_map.size(); idx++)
-            {
-                cout<<symbols_map[idx].first<<' ';
-                cout<<symbols_map[idx].second<<'\n';
-            }
-        #endif
     }
+    else if(get_cake != "")
+    {
+        symbols_map.push_back(make_pair(get_cake, to_string(pointer)));
+    }
+    #if defined(PRINT_SYMBOL)
+        for(int idx = 0; idx < symbols_map.size(); idx++)
+        {
+            cout<<symbols_map[idx].first<<' ';
+            cout<<symbols_map[idx].second<<'\n';
+        }
+    #endif
 }
+
 void clean_command(string &instruction)//This function is going to be used to remove the extra spaces when instructions are read from the file..
 {
     string new_command = "";
     int idx = 0;
     for(idx = 0; idx < instruction.size(); idx++)
     {
-        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9') || instruction[idx] == '+' || instruction[idx] == '-' || instruction[idx] == '/')
+        if(instruction[idx] == '@' || (instruction[idx] >= 'A' && instruction[idx] <= 'Z') || instruction[idx] == '=' || instruction[idx] == ';' || (instruction[idx] >= '0' && instruction[idx] <= '9') || instruction[idx] == '+' || instruction[idx] == '-' || instruction[idx] == '/' || instruction[idx] == '(' || instruction[idx] == ')')
         new_command += instruction[idx];
     }
     instruction = new_command;
@@ -360,7 +468,7 @@ string instruction_a_handler(string instruction) //This function convert instruc
     
     //Getting part to be converted..
     int count = new_instruction.size();
-    for(int idx = 1; idx < count; idx++)
+    for(int idx = 1; idx < count; idx++) //Loop started from the 1 because it will skip @..
     {
         divide += new_instruction[idx];
     }
