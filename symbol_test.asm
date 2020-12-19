@@ -1,11 +1,12 @@
-@256
+/fake
+@256//cake..
 D=A
-@S@P
+@SP
 M=D
-@133
-0;JMP
-@R15
-M=K
+@133 
+0;JMP 
+@R1
+M//D
 @SP
 AM=M-1
 D=M
@@ -13,7 +14,7 @@ A=A-1
 D=M-D
 M=0
 @END_EQ
-D;JNP
+D;JMP
 @SP
 A=M-1
 M=-1

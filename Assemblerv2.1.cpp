@@ -1,6 +1,6 @@
 /*
 * string programmer = {"Arslan Iftikhar"};
-* string file_name = {"Assemblerv2.0.cpp"};
+* string file_name = {"Assemblerv2.1.cpp"};
 * Class Date starting_date(12,17,2020);
 * This is Two Parse Assembler it can handle symbol and variables and will handle errors..
 * A journalist asked a programmer: What makes code bad?
@@ -23,7 +23,6 @@ using namespace std;
 
 //Global variables..
 vector<pair<string,string>> symbols_map; //THis map is Global because it is going to be used by multiple functions..
-vector<int> line_declared;
 bool error_flag = false;
 int number_errors = 0;
 int label_count = 0;
@@ -47,7 +46,7 @@ void handle_variable(string handle_variable, int pointers, int &variables_pointe
 bool look_in_symbols(string command_a);
 void handle_refrence(string &command_a, int pointers);
 void parse_a(string &command_a);
-bool check_syntax_refrence(string &command_a, int k); //Where K is Unknow Character..
+bool check_syntax_refrence(string &command_a, bool k); //Where K is Unknow Character..
 
                                                                     //Main function
 /*****************************************************************************************************************************************************************/
@@ -97,7 +96,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         }
         if(command_a[0] == '(' && command_a[command_a.size()-1] == ')')
         {
-            if(!(check_syntax_refrence(command_a, 1)))
+            if(!(check_syntax_refrence(command_a, true)))
             {
                 pointers--;
                 label_count++;
@@ -116,15 +115,17 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
         pointers++;
         lines++;
         clean_command(command_a);
+        command= command_a;
         if(command_a[0] == '/' || command_a == "")//Making test again..
         {
             pointers--;
             continue;
         }
-        if(command_a[0] == '@' && ((command_a[1] >= 'A' && command_a[1] <= 'Z') || command_a[1] == '_' || (command_a[1] >= 'a' && command_a[1] <= 'z')))
+        if(command_a[0] == '@')
         {
-            if(!(check_syntax_refrence(command_a, 0)))
-            handle_variable(command_a, pointers, variables_pointer);  
+            command_a = handling_comment(command_a);
+            if(!(check_syntax_refrence(command_a, false)))
+                handle_variable(command_a, pointers, variables_pointer);  
         }
     }
     
@@ -132,13 +133,23 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     file.clear();
     file.seekg(0, ios::beg);
     pointers = 0;
+    lines = 0;
     ofstream tfile("TEMP.asm");
     {
         while(getline(file, command_a))
         {
+            lines++;
             clean_command(command_a);
-            if(command_a[0] == '/' || command_a == "")
+            command= command_a;
+            if((command_a[0] == '/' && command_a[1] == '/')|| command_a == "")
                 continue;
+            else if(command_a[0] == '/' && command_a[1] != '/')
+            {
+                number_errors++;
+                cout<<"SYNTAX ERROR: Unknow statement maybe you missed / at line "<<lines<<'\n';
+                cout<<"\t\t\t"<<command_a<<'\n';
+                error_flag = true;
+            }
             else if(command_a[0] == '(')
                 continue;
             else if(command_a[0] == '@')
@@ -157,6 +168,7 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
   {
         lines++;
         clean_command(command_a);
+        command= command_a;
         if(command_a[0] == '/' || command_a == "")//Making test again..
         {
             continue;
@@ -190,15 +202,15 @@ int main(int argc, char *argv[])//Main function I know it's Dumb but i am adding
     file.close();
     kfile.close();
     tfile.close();
-    remove("TEMP.asm");
     return 0;
 }
 
                                                                         //Functions Definitions..
 /***********************************************************************************************************************************************************************/
-bool check_syntax_refrence(string &command_a, int k)
+bool check_syntax_refrence(string &command_a, bool k)
 {
     if(k)
+    {
         if(command_a[k] >= '0' && command_a[k] <= '9')
         {
             cout<<"SYNTAX ERROR: The Label Name Cannot Start from the Integer at line "<<lines<<'\n';
@@ -206,8 +218,20 @@ bool check_syntax_refrence(string &command_a, int k)
             error_flag = true;
             number_errors++;
         }
+    }
     else if(command_a[1] >= '0' && command_a[1] <= '9')
     {
+        bool k_flag = false;
+        int counter = 0;
+        for(int idx = 0; idx < command_a.size(); idx++)
+        {
+            if(command_a[idx] >= '0' && command_a[idx] <= '9')
+            {
+                counter++;
+            }
+        }
+        if(counter == command_a.size() - 1)
+            return true; // This falacy here because we are not increasing the error because there is no error but we need to shut function down..
         cout<<"SYNTAX ERROR: The Label Name Cannot Start from the Integer at line "<<lines<<'\n';
         cout<<"\t\t"<<command_a<<'\n';
         error_flag = true;
@@ -520,24 +544,24 @@ string convert_binary(int number) //convert number to binary and return the stri
 
 string handling_comment(string instruction) //This Functions will remove the comments from the instructions..
 {
-    int idx = 0;
     string new_instruction = "";
     int count = instruction.size();
     bool flag = false;
-    for(char ch:instruction)
+    int idx {0};
+    for(idx = 0; idx < count; idx++)
     {
-        if(ch == '/')
+        if(instruction[idx] == '/' && instruction[idx + 1] == '/')
         {
             flag = true;
             break;
         }
     }
+
     if(flag)
     {
-        while(instruction[idx] != '/')
+        for(int kdx = 0; kdx < idx; kdx++)
         {
-            new_instruction += instruction[idx];
-            idx++;
+            new_instruction += instruction[kdx];
          
         }
         return new_instruction;
