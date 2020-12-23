@@ -3,8 +3,11 @@
 * string file_name = {"Assemblerv2.1.cpp"};
 * Class Date starting_date(12,17,2020);
 * This is Two Parse Assembler it can handle symbol and variables and will handle errors..
+*                                   Jokes for Fun..... 
 * A journalist asked a programmer: What makes code bad?
 * Programmer: No comments.
+* Why are Assembly programmers always soaking wet?
+* They work below C-level.
 * *********************************************USAGE***********************************************************
 * Usage: ./Assemblerv2.1 <filename.asm>
 * output will be machine.hack..
